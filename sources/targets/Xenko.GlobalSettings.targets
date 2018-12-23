@@ -37,16 +37,19 @@
     <!-- Cross-compilation (multiple platforms at once) -->
     <RuntimeIdentifiers Condition="($(TargetFramework.StartsWith('net4')) Or '$(TargetFramework)' == 'netstandard2.0') And $(_XenkoPlatforms.Contains(';Windows;'))">win-d3d11;win-d3d12;win-opengl;win-opengles;win-vulkan</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="($(TargetFramework.StartsWith('net4')) Or '$(TargetFramework)' == 'netstandard2.0') And $(_XenkoPlatforms.Contains(';Linux;'))">$(RuntimeIdentifiers);linux-opengl;linux-vulkan</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="$(TargetFramework.StartsWith('uap10.0')) And $(_XenkoPlatforms.Contains(';Windows;'))">win-d3d11</RuntimeIdentifiers>
     <!-- Override if building a specific platform -->
     <RuntimeIdentifiers Condition="'$(XenkoPlatformOriginal)' == 'Windows'">win-d3d11;win-d3d12;win-opengl;win-opengles;win-vulkan</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="'$(XenkoPlatformOriginal)' == 'Linux'">linux-opengl;linux-vulkan</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="'$(XenkoPlatformOriginal)' == 'UWP'">win-d3d11</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(XenkoGraphicsApiDependent)' == 'true'">
     <RuntimeIdentifiers>$([MSBuild]::Unescape($(RuntimeIdentifiers.Trim(';'))))</RuntimeIdentifiers>
     <RuntimeIdentifierDefault Condition="'$(RuntimeIdentifiers)' != ''">$(RuntimeIdentifiers.Split(';')[0])</RuntimeIdentifierDefault>
 
     <ExtrasBuildEachRuntimeIdentifier Condition="'$(RuntimeIdentifiers)' != ''">true</ExtrasBuildEachRuntimeIdentifier>
-    <!--<DisableFastUpToDateCheck Condition="$(RuntimeIdentifiers.Contains(';'))">true</DisableFastUpToDateCheck>-->
+    
+    <!-- Compute RuntimeIdentifier (it might be different if passed from a ProjectReference) -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifierDefault)' != ''">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
 
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == 'win'">win-d3d11</RuntimeIdentifier>
@@ -61,16 +64,6 @@
     <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'linux-opengl'">OpenGL</XenkoGraphicsApi>
     <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'linux-vulkan'">Vulkan</XenkoGraphicsApi>
   </PropertyGroup>
-  
-  <!-- Use default runtime as ref assembly -->
-  <PropertyGroup Condition="'$(XenkoGraphicsApiDependent)' == 'true' And '$(XenkoGraphicsApiDependentBuildAll)' == 'true' And ('$(RuntimeIdentifierDefault)' == '' Or '$(RuntimeIdentifier)' == '$(RuntimeIdentifierDefault)')">
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);XenkoIncludeRefAssemblies</TargetsForTfmSpecificBuildOutput>
-  </PropertyGroup>
-  <Target Name="XenkoIncludeRefAssemblies">
-    <ItemGroup>
-      <TfmSpecificPackageFile Include="@(IntermediateAssembly)" PackagePath="ref/$(TargetFramework)" />
-    </ItemGroup>
-  </Target>
   
   <!-- Workaround: Remove RuntimeIdentifier from Solution references (https://github.com/onovotny/MSBuildSdkExtras/issues/139) -->
   <Target Name="_XenkoRemoveRuntimeIdentifierFromSolutionDependencies" AfterTargets="AssignProjectConfiguration">
